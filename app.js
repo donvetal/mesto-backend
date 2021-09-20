@@ -14,17 +14,18 @@ mongoose.connect('mongodb://localhost:27017/mestodb');
 app.use((req,
          res,
          next) => {
-    req.user = {
-        _id: '6144225acd60445927b67bd7'
-    };
-    next();
+  req.user = {
+    _id: '6144225acd60445927b67bd7'
+  };
+  next();
 });
 app.use('/cards', require('./routes/cards'));
 app.use('/users', require('./routes/users'));
-app.use('/users/me', require('./routes/users'));
-app.use('/users/me/avatar', require('./routes/users'));
+app.use((req, res) => {
+  res.status(404).send({message: 'Извините, страница не найдена!'});
+});
 
 app.listen(PORT, () => {
-    console.log(`App listening on port ${PORT}`);
+  console.log(`App listening on port ${PORT}`);
 });
 

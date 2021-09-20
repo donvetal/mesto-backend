@@ -2,7 +2,7 @@
   "name": "mesto-backend",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "npx eslint .",
@@ -11,7 +11,7 @@
     "mongod": "brew services start mongodb-community@4.4"
   },
   "keywords": [],
-  "author": "",
+  "author": "Dolzhenko Vitaliy",
   "license": "ISC",
   "devDependencies": {
     "eslint": "^7.32.0",
