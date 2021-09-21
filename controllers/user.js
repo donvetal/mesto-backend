@@ -51,6 +51,8 @@ module.exports.updateProfile = (req, res) => {
     .catch((err) => {
       if (err.name === 'CastError') {
         res.status(400).send({ message: 'Невалидный id.' });
+      } else if (err.name === 'ValidationError') {
+        res.status(400).send({ message: 'Некорректные данные ' });
       } else {
         res.status(500).send({ massage: 'Внутренняя ошибка сервера' });
       }
@@ -68,6 +70,8 @@ module.exports.updateAvatar = (req, res) => {
     .catch((err) => {
       if (err.name === 'CastError') {
         res.status(400).send({ message: 'Невалидный id.' });
+      } else if (err.name === 'ValidationError') {
+        res.status(400).send({ message: 'Некорректные данные ' });
       } else {
         res.status(500).send({ massage: 'Внутренняя ошибка сервера' });
       }
