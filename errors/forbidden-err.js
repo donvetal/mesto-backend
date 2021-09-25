@@ -3,7 +3,6 @@ class ForbiddenErr extends Error {
     super(message);
     this.statusCode = 403;
   }
-
 }
 
 module.exports = ForbiddenErr;
