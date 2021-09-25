@@ -1,24 +1,28 @@
 const Card = require('../models/card');
+const BadRequestErr = require('../errors/bad-request-err');
+const ForbiddenErr = require('../errors/forbidden-err');
+const NotFoundErr = require('../errors/not-found-err');
 
-module.exports.createCard = (req, res) => {
+module.exports.createCard = (req, res, next) => {
   const {name, link} = req.body;
   Card.create({name, link, owner: req.user._id})
     .then((card) => res.send({data: card}))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(400).send({message: 'Переданы некорректные данные при создании карточки.'});
+        throw new BadRequestErr('Некорректные данные ');
       } else {
-        res.status(500).send({massage: 'Внутренняя ошибка сервера'});
+        next(err);
       }
-    });
+    })
+    .catch(next);
 };
-module.exports.getCards = (req, res) => {
+module.exports.getCards = (req, res, next) => {
   Card.find({})
     .then((cards) => res.send({data: cards}))
-    .catch(() => res.status(500).send({message: 'Внутренняя ошибка сервера'}));
+    .catch(next);
 };
 
-module.exports.deleteCard = (req, res) => {
+module.exports.deleteCard = (req, res, next) => {
   Card.findById(req.params.id)
     .then((card) => {
       if (!card) {
@@ -27,52 +31,24 @@ module.exports.deleteCard = (req, res) => {
       if (card.owner.toString() === req.user._id.toString()) {
         return Card.findByIdAndRemove(req.params.id)
           .then((card) => res.send({data: card}))
-          .catch((err) => {
-            if (err.name === 'CastError') {
-              res.status(400).send({message: 'Невалидный id.'});
-            } else if (err.statusCode === 404) {
-              res.status(404).send({message: err.message});
-            } else {
-              res.status(500).send({message: 'Внутренняя ошибка сервера'});
-            }
-          });
+          .catch(next);
       }
-      return res.status(403).send({message: 'Запрещено. У клиента нет прав доступа к содержимому!'});
+      throw new ForbiddenErr('Запрещено. У клиента нет прав доступа к содержимому!');
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(400).send({ message: 'Невалидный id.' });
+        throw new BadRequestErr('Невалидный id.');
       } else if (err.statusCode === 404) {
-        res.status(404).send({ message: err.message });
+        throw new NotFoundErr('Нет карточки по заданному id');
       } else {
-        res.status(500).send({ message: 'Внутренняя ошибка сервера' });
+        next(err);
       }
-    });
+    })
+    .catch(next);
 };
 
-// module.exports.deleteCard = (req, res) => {
-//   console.log(req.body.owner);
-//   console.log(req.user._id);
-//   console.log(req.body);
-//   Card.findByIdAndRemove(req.params.id)
-//     .orFail(() => {
-//       const error = new Error('Нет карточки по заданному id');
-//       error.statusCode = 404;
-//       throw error;
-//     })
-//     .then((card) => res.send({ data: card }))
-//     .catch((err) => {
-//       if (err.name === 'CastError') {
-//         res.status(400).send({ message: 'Невалидный id.' });
-//       } else if (err.statusCode === 404) {
-//         res.status(404).send({ message: err.message });
-//       } else {
-//         res.status(500).send({ message: 'Внутренняя ошибка сервера' });
-//       }
-//     });
-// };
 
-module.exports.likeCard = (req, res) => {
+module.exports.likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(req.params.id,
     {$addToSet: {likes: req.user._id}},
     {new: true})
@@ -84,15 +60,16 @@ module.exports.likeCard = (req, res) => {
     .then((card) => res.send({data: card}))
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(400).send({message: 'Невалидный id.'});
+        throw new BadRequestErr('Невалидный id.');
       } else if (err.statusCode === 404) {
         res.status(404).send({message: err.message});
       } else {
-        res.status(500).send({massage: 'Внутренняя ошибка сервера'});
+        next(err);
       }
-    });
+    })
+    .catch(next);
 };
-module.exports.dislikeCard = (req, res) => {
+module.exports.dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(req.params.id,
     {$pull: {likes: req.user._id}},
     {new: true})
@@ -104,11 +81,12 @@ module.exports.dislikeCard = (req, res) => {
     .then((card) => res.send({data: card}))
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(400).send({message: 'Невалидный id.'});
+        throw new BadRequestErr('Невалидный id.');
       } else if (err.statusCode === 404) {
         res.status(404).send({message: err.message});
       } else {
-        res.status(500).send({massage: 'Внутренняя ошибка сервера'});
+        next(err);
       }
-    });
+    })
+    .catch(next);
 };

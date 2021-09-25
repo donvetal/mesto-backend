@@ -1,8 +1,12 @@
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const NotFoundError = require('../errors/not-found-err');
+const BadRequestErr = require('../errors/bad-request-err');
+const ConflictErr = require('../errors/conflict-err');
 
-module.exports.createUser = (req, res) => {
+
+module.exports.createUser = (req, res, next) => {
   const {email, password, name, about, avatar} = req.body;
 
   bcrypt.hash(password, 10)
@@ -11,14 +15,17 @@ module.exports.createUser = (req, res) => {
     .then((user) => res.send({data: user}))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(400).send({message: 'Переданы некорректные данные при создании пользователя.'});
+        throw new BadRequestErr('Некорректные данные ');
+      } else if (err.name === "MongoError" && err.code === 11000) {
+        throw new ConflictErr('Конфликтует, такой email уже существует.');
       } else {
-        res.status(500).send({massage: 'Внутренняя ошибка сервера'});
+        next(err);
       }
-    });
+    })
+    .catch(next);
 };
 
-module.exports.login = (req, res) => {
+module.exports.login = (req, res, next) => {
   const {email, password} = req.body;
 
   return User.findUserByCredentials(email, password)
@@ -31,86 +38,74 @@ module.exports.login = (req, res) => {
     })
     .catch((err) => {
       res.status(401).send({message: err.message});
-    });
+    })
+    .catch(next);
 };
 
-// module.exports.getUser = (req, res) => {
-//   User.findById(req.params.id)
-//     .then((user) => {
-//       if (!user) {
-//         return res.status(404).send({message: 'Пользователь по указанному _id не найден.'});
-//       }
-//       return res.send({data: user});
-//     })
-//     .catch((err) => {
-//       if (err.name === 'CastError') {
-//         res.status(400).send({message: 'Невалидный id'});
-//       } else {
-//         res.status(500).send({massage: 'Внутренняя ошибка сервера'});
-//       }
-//     });
-// };
+module.exports.getProfile = (req, res, next) => {
+  User.findById(req.params.id)
+    .then((user) => {
+      if (!user) {
+        throw new NotFoundError('Пользователь по указанному _id не найден.');
+      }
+      return res.send({data: user});
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        throw new BadRequestErr('Невалидный id');
+      } else {
+        next(err);
+      }
+    })
+    .catch(next);
+};
 
-module.exports.getUsers = (req, res) => {
+module.exports.getUsers = (req, res, next) => {
   User.find({})
     .then((users) => res.send({data: users}))
-    .catch(() => {
-      res.status(500).send({massage: 'Внутренняя ошибка сервера'});
-    });
+    .catch(next);
 };
 
-module.exports.updateProfile = (req, res) => {
+module.exports.updateProfile = (req, res, next) => {
   const {name, about} = req.body;
   User.findByIdAndUpdate(req.user._id, {name, about}, {new: true, runValidators: true})
     .then((user) => {
       if (!user) {
-        return res.status(404).send({message: 'Нет пользователя по заданному id'});
+        throw new NotFoundError('Пользователь по указанному _id не найден.');
       }
       return res.send({data: user});
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(400).send({message: 'Невалидный id.'});
+        throw new BadRequestErr('Невалидный id');
       } else if (err.name === 'ValidationError') {
-        res.status(400).send({message: 'Некорректные данные '});
+        throw new BadRequestErr('Некорректные данные ');
       } else {
-        res.status(500).send({massage: 'Внутренняя ошибка сервера'});
+        next(err);
       }
-    });
+    })
+    .catch(next);
 };
-module.exports.updateAvatar = (req, res) => {
+
+module.exports.updateAvatar = (req, res, next) => {
   const {avatar} = req.body;
   User.findByIdAndUpdate(req.user._id, {avatar}, {new: true, runValidators: true})
     .then((user) => {
       if (!user) {
-        return res.status(404).send({message: 'Нет пользователя по заданному id'});
+        throw new NotFoundError('Пользователь по указанному _id не найден.');
       }
       return res.send({data: user});
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(400).send({message: 'Невалидный id.'});
+        throw new BadRequestErr('Невалидный id');
       } else if (err.name === 'ValidationError') {
-        res.status(400).send({message: 'Некорректные данные '});
+        throw new BadRequestErr('Некорректные данные ');
       } else {
-        res.status(500).send({massage: 'Внутренняя ошибка сервера'});
+        next(err);
       }
-    });
+    })
+    .catch(next);
 };
 
-module.exports.getCurrentUser = (req, res) => {
-  User.findById(req.params.id)
-    .then((user) => {
-      if (!user) {
-        return res.status(404).send({message: 'Пользователь по указанному _id не найден.'});
-      }
-      return res.send({data: user});
-    })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        res.status(400).send({message: 'Невалидный id'});
-      } else {
-        res.status(500).send({massage: 'Внутренняя ошибка сервера'});
-      }
-    });
-}
+
