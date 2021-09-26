@@ -4,11 +4,14 @@ const mongoose = require('mongoose');
 const { PORT = 3000 } = process.env;
 const bodyParser = require('body-parser');
 const { celebrate, Joi, errors } = require('celebrate');
+const cookieParser = require('cookie-parser');
 const { login } = require('./controllers/user');
 const { createUser } = require('./controllers/user');
 const auth = require('./middlewares/auth');
+const NotFoundError = require('./errors/not-found-err');
 
 const app = express();
+app.use(cookieParser());
 app.use(bodyParser.json()); // для собирания JSON-формата
 app.use(bodyParser.urlencoded({ extended: true })); // для приёма веб-страниц внутри POST-запроса
 
@@ -26,7 +29,7 @@ app.post('/signup', celebrate({
     password: Joi.string().required().min(8),
     name: Joi.string().min(2).max(30),
     about: Joi.string().min(2).max(30),
-    avatar: Joi.string(),
+    avatar: Joi.string().required().pattern(/([\w+]+:\/\/)?([\w\d-]+\.)*[\w-]+[.:]\w+([/?=&#]?[\w-]+)*\/?#?/),
   }),
 }), createUser);
 app.use(auth);
@@ -34,8 +37,9 @@ app.use('/cards', require('./routes/cards'));
 app.use('/users', require('./routes/users'));
 
 app.use((req, res) => {
-  res.status(404).send({ message: 'Извините, страница не найдена!' });
+  throw new NotFoundError('Извините, страница не найдена!');
 });
+
 app.use(errors());
 app.use((err,
   req, res, next) => {
