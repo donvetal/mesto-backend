@@ -3,12 +3,10 @@ const UnauthorizedErr = require('../errors/unauthorized-err');
 const ForbiddenErr = require('../errors/forbidden-err');
 
 module.exports = (req, res, next) => {
-  const { authorization } = req.headers;
-
-  if (!authorization || !authorization.startsWith('Bearer ')) {
+  const token = req.cookies.jwt;
+  if (!token) {
     throw new UnauthorizedErr('Необходима авторизация');
   }
-  const token = authorization.replace('Bearer ', '');
   let payload;
   try {
     payload = jwt.verify(token, 'super-strong-secret');
