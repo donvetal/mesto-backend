@@ -9,6 +9,7 @@ const { login } = require('./controllers/user');
 const { createUser } = require('./controllers/user');
 const auth = require('./middlewares/auth');
 const NotFoundError = require('./errors/not-found-err');
+const { requestLogger, errorLogger } = require('./middlewares/logger');
 
 const app = express();
 app.use(cookieParser());
@@ -16,6 +17,7 @@ app.use(bodyParser.json()); // для собирания JSON-формата
 app.use(bodyParser.urlencoded({ extended: true })); // для приёма веб-страниц внутри POST-запроса
 
 mongoose.connect('mongodb://localhost:27017/mestodb');
+app.post(requestLogger); // подключаем логгер запросов
 
 app.post('/signin', celebrate({
   body: Joi.object().keys({
@@ -40,8 +42,8 @@ app.use('/users', require('./routes/users'));
 app.use((req, res) => {
   throw new NotFoundError('Извините, страница не найдена!');
 });
-
-app.use(errors());
+app.use(errorLogger); // подключаем логгер ошибок
+app.use(errors()); // обработчик ошибок celebrate
 app.use((err,
   req, res, next) => {
   // если у ошибки нет статуса, выставляем 500
