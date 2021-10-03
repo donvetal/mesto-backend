@@ -8,7 +8,9 @@
     "lint": "npx eslint .",
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "mongod": "brew services start mongodb-community@4.4"
+    "mongod": "brew services start mongodb-community@4.4",
+    "deploy": "ssh vitaliymontana@130.193.43.158 \"git clone  https://github.com/donvetal/mesto-vetal.git && cd mesto-vetal/backend && npm install && npm start\"",
+    "redeploy": "ssh vitaliymontana@130.193.43.158 \"git pull\""
   },
   "keywords": [],
   "author": "Dolzhenko Vitaliy",
